@@ -27,9 +27,40 @@
  *
  *  @author Zach Blick, Isha Gupta
  */
+
 public class TextCompressor {
 
     private static void compress() {
+        // Initialize and set up TST with letter and delete code
+        TST seen = new TST();
+        // TODO: Does this work??
+        int code = 0x00;
+        for(int i = 0; i < 127; i++){
+            seen.insert("" + ((char)i),code++);
+        }
+        // Add in the EOF string using the next code
+        // TODO: Print out "EOF as code?????
+        seen.insert("EOF", code++);
+
+
+
+        String text = BinaryStdIn.readString();
+        int index = 0;
+        String prefix;
+
+        while(index < text.length()){
+            // Find the longest string in the TST that matches
+            prefix = seen.getLongestPrefix(text, index);
+            // Convert the string into a code and print out
+            BinaryStdOut.write(seen.lookup(prefix));
+            if(index+1 < text.length()){
+                prefix += text.charAt(index+1);
+                // TODO: how to check when codes are full
+                seen.insert(prefix, code++);
+            }
+            index += prefix.length();
+        }
+        BinaryStdOut.write("EOF");
 
 
         BinaryStdOut.close();
