@@ -78,22 +78,34 @@ public class TextCompressor {
         for(int i = 0; i < EOF; i++){
             seen[i] = ("" + (char)i);
         }
+        int numCode = 0;
         String curCode;
         int curNum = EOF + 1;
-        String lookahead;
+        String lookAhead;
+        int numLookAhead;
 
+        numCode = BinaryStdIn.readInt(12);
+        curCode = seen[numCode];
 
-       while(BinaryStdIn.isEmpty()){
+       while(numCode != EOF){
             // Read in string and print
-           curCode = seen[BinaryStdIn.readInt(12)];
+
            BinaryStdOut.write(curCode);
 
            // Lookahead to next string to add to seen array
-           lookahead = seen[BinaryStdIn.readInt(12)];
-           seen[curNum] = curCode + lookahead;
+           numLookAhead = BinaryStdIn.readInt(12);
+           lookAhead = seen[numLookAhead];
 
+           if(curNum == numLookAhead){
+               lookAhead += lookAhead.charAt(0);
+           }
+
+           curCode = lookAhead;
+
+
+
+           seen[curNum++] = curCode + lookAhead.charAt(0);
        }
-
 
 
         BinaryStdOut.close();

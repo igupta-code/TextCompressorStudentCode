@@ -99,7 +99,6 @@ public class TST {
         else if (depth < s.length() - 1)
             return lookup(s, n.mid, depth + 1);
         else return n.code;
-
     }
 
     /**
