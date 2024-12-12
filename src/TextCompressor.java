@@ -21,9 +21,6 @@
  *  = 43.54% compression ratio!
  ******************************************************************************/
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-
 /**
  *  The {@code TextCompressor} class provides static methods for compressing
  *  and expanding natural language through textfile input.
@@ -32,83 +29,82 @@ import java.util.ArrayList;
  */
 
 public class TextCompressor {
-    public static final int EOF = 257;
+    public static final int EOF = 256;
     public static final int MAX_NUM_CODES = 4096;
 
 
     private static void compress() {
         // Initialize and set up TST with letter and delete code
         TST seen = new TST();
-        int code = 0x00;
         for(int i = 0; i < EOF; i++){
-            seen.insert("" + ((char)i), i);
+            seen.insert("" + (char)i, i);
         }
         // Add in the EOF string using the next code
-        code = EOF + 1;
+        int code = EOF + 1;
         // seen.print();
-
-
 
         String text = BinaryStdIn.readString();
         int index = 0;
-        String prefix;
 
         while(index < text.length()){
             // Find the longest string in the TST that matches
-            prefix = seen.getLongestPrefix(text, index);
+            String prefix = seen.getLongestPrefix(text, index);
             // Convert the string into a code and print out
             BinaryStdOut.write(seen.lookup(prefix), 12);
-            if(index+1 < text.length()){
-                prefix += text.charAt(index+1);
-                // TODO: how to check when codes are full
+            if(index+prefix.length() < text.length()){
                 if(code < MAX_NUM_CODES) {
-                    seen.insert(prefix, code++);
+                    seen.insert(prefix + text.charAt(index+prefix.length()), code++);
                 }
             }
             index += prefix.length();
         }
-        BinaryStdOut.write(EOF);
-
-
+        BinaryStdOut.write(EOF, 12);
         BinaryStdOut.close();
     }
 
     private static void expand() {
+        // Fills in ascii values into seen array
         String[] seen = new String[MAX_NUM_CODES];
         for(int i = 0; i < EOF; i++){
-            seen[i] = ("" + (char)i);
+            seen[i] = "" + (char)i;
         }
-        int numCode = 0;
-        String curCode;
-        int curNum = EOF + 1;
-        String lookAhead;
-        int numLookAhead;
+        int nextEmptyCode = EOF + 1;
 
-        numCode = BinaryStdIn.readInt(12);
-        curCode = seen[numCode];
+        String nextStr;
+        int nextCode;
 
-       while(numCode != EOF){
-            // Read in string and print
+        // Read in the first string
+        int code = BinaryStdIn.readInt(12);
+        String strCode = seen[code];
 
-           BinaryStdOut.write(curCode);
+       while(code != EOF){
+//           System.out.println(curCode);
+           // Print the current code
+           BinaryStdOut.write(strCode);
 
            // Lookahead to next string to add to seen array
-           numLookAhead = BinaryStdIn.readInt(12);
-           lookAhead = seen[numLookAhead];
-
-           if(curNum == numLookAhead){
-               lookAhead += lookAhead.charAt(0);
+           nextCode = BinaryStdIn.readInt(12);
+           if(nextCode == EOF){
+               break;
            }
+           nextStr = seen[nextCode];
 
-           curCode = lookAhead;
-
-
-
-           seen[curNum++] = curCode + lookAhead.charAt(0);
+           // If you have free codes, add in a new code
+           if(nextEmptyCode < MAX_NUM_CODES) {
+               // Fixes edge case bug
+               if(nextEmptyCode == nextCode){
+                   seen[nextEmptyCode++] = strCode + strCode.charAt(0);
+                   nextStr = strCode + strCode.charAt(0);
+               }
+               else{
+                   seen[nextEmptyCode++] = strCode + nextStr.charAt(0);
+               }
+           }
+           // For next loop, update the current Code
+           strCode = nextStr;
+           code = nextCode;
        }
-
-
-        BinaryStdOut.close();
+       BinaryStdOut.close();
     }
 
     public static void main(String[] args) {
