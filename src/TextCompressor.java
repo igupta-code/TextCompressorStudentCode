@@ -29,41 +29,46 @@
  */
 
 public class TextCompressor {
-    public static final int EOF = 256;
-    public static final int MAX_NUM_CODES = 4096;
+    public static final int EOF = 256,
+            MAX_NUM_CODES = 4096,
+            BITS = 12;
+
 
 
     private static void compress() {
-        // Initialize and set up TST with letter and delete code
+        // Initialize and set up TST with all ascii values
         TST seen = new TST();
         for(int i = 0; i < EOF; i++){
             seen.insert("" + (char)i, i);
         }
-        // Add in the EOF string using the next code
+        // Leave space for end of file code
         int code = EOF + 1;
-        // seen.print();
 
+        // Read in the whole file into a String
         String text = BinaryStdIn.readString();
-        int index = 0;
 
+        int index = 0;
         while(index < text.length()){
             // Find the longest string in the TST that matches
             String prefix = seen.getLongestPrefix(text, index);
+
             // Convert the string into a code and print out
-            BinaryStdOut.write(seen.lookup(prefix), 12);
-            if(index+prefix.length() < text.length()){
-                if(code < MAX_NUM_CODES) {
+            BinaryStdOut.write(seen.lookup(prefix), BITS);
+
+            // If there is space for more codes, add in the new code into the TST
+            if(index+prefix.length() < text.length() && code < MAX_NUM_CODES){
                     seen.insert(prefix + text.charAt(index+prefix.length()), code++);
-                }
             }
+            // Increment index by how much you have written out
             index += prefix.length();
         }
-        BinaryStdOut.write(EOF, 12);
+        // Write out EOF and close
+        BinaryStdOut.write(EOF, BITS);
         BinaryStdOut.close();
     }
 
     private static void expand() {
-        // Fills in ascii values into seen array
+        // Fills in ascii values into seen array, leaving space for EOF
         String[] seen = new String[MAX_NUM_CODES];
         for(int i = 0; i < EOF; i++){
             seen[i] = "" + (char)i;
@@ -73,34 +78,34 @@ public class TextCompressor {
         String nextStr;
         int nextCode;
 
-        // Read in the first string
-        int code = BinaryStdIn.readInt(12);
+        // Read in the first 12 bits into your first code
+        int code = BinaryStdIn.readInt(BITS);
         String strCode = seen[code];
 
        while(code != EOF){
-//           System.out.println(curCode);
            // Print the current code
            BinaryStdOut.write(strCode);
 
-           // Lookahead to next string to add to seen array
-           nextCode = BinaryStdIn.readInt(12);
+           // Lookahead to next string to add to seen array, exits if it's the EOF
+           nextCode = BinaryStdIn.readInt(BITS);
            if(nextCode == EOF){
                break;
            }
            nextStr = seen[nextCode];
 
-           // If you have free codes, add in a new code
-           if(nextEmptyCode < MAX_NUM_CODES) {
+           // If you have free codes, add in a new code to the seen array
+           if(nextEmptyCode < MAX_NUM_CODES){
                // Fixes edge case bug
                if(nextEmptyCode == nextCode){
                    seen[nextEmptyCode++] = strCode + strCode.charAt(0);
                    nextStr = strCode + strCode.charAt(0);
                }
                else{
+                   // If it's not the edge case, add the code in normally
                    seen[nextEmptyCode++] = strCode + nextStr.charAt(0);
                }
            }
-           // For next loop, update the current Code
+           // Update the current Code for the next loop
            strCode = nextStr;
            code = nextCode;
        }
